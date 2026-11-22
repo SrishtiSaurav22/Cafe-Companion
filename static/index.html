@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brew & Bloom · Café Companion</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span class="logo">☕</span>
+    <div>
+      <h1>Brew &amp; Bloom</h1>
+      <p class="sub">Café Companion · order by chatting</p>
+    </div>
+  </div>
+  <div id="status" class="pill" title="Live estimate from the order queue">Checking wait…</div>
+</header>
+
+<main class="layout">
+  <section class="card chat">
+    <div id="log" class="log" aria-live="polite"></div>
+    <div id="chips" class="chips"></div>
+    <form id="chatForm" class="composer">
+      <input id="msg" maxlength="500" autocomplete="off" placeholder="e.g. Something cold, no caffeine, under ₹250" required>
+      <button type="submit" id="sendBtn">Send</button>
+    </form>
+  </section>
+
+  <aside class="side">
+    <section class="card">
+      <h2>Your order</h2>
+      <ul id="cart" class="cart"></ul>
+      <div class="total"><span>Total</span><strong id="total">₹0</strong></div>
+      <input id="name" class="name" maxlength="40" placeholder="Name for the order">
+      <button id="placeBtn" class="primary" disabled>Place order</button>
+      <p class="fine">Nothing is ordered until you press this button and confirm.</p>
+    </section>
+
+    <section id="orderBox" class="card hidden"></section>
+
+    <section class="card">
+      <h2>Menu</h2>
+      <div id="tabs" class="tabs"></div>
+      <ul id="menu" class="menu"></ul>
+    </section>
+  </aside>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const rupee = (n) => "₹" + n;
+let MENU = null, activeCat = null, cart = [], history = [], busy = false;
+
+function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+function addBubble(role, text) {
+  const div = document.createElement("div");
+  div.className = "bubble " + role;
+  div.textContent = text;
+  $("log").appendChild(div);
+  $("log").scrollTop = $("log").scrollHeight;
+  return div;
+}
+
+function setChips(list) {
+  $("chips").innerHTML = "";
+  list.forEach((t) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = t;
+    b.onclick = () => send(t);
+    $("chips").appendChild(b);
+  });
+}
+
+function renderCart(total) {
+  const ul = $("cart"); ul.innerHTML = "";
+  if (!cart.length) ul.innerHTML = '<li class="empty">Empty — chat or tap + on the menu.</li>';
+  cart.forEach((l, idx) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<div><strong>${l.qty}× ${esc(l.name)}</strong>${l.notes ? `<small>${esc(l.notes)}</small>` : ""}</div>
+      <div class="row"><span>${rupee(l.price * l.qty)}</span><button class="x" aria-label="Remove">−</button></div>`;
+    li.querySelector(".x").onclick = () => {
+      if (l.qty > 1) l.qty--; else cart.splice(idx, 1);
+      renderCart();
+    };
+    ul.appendChild(li);
+  });
+  $("total").textContent = rupee(total ?? cart.reduce((s, l) => s + l.price * l.qty, 0));
+  $("placeBtn").disabled = !cart.length;
+}
+
+function renderMenu() {
+  const cats = [...new Set(MENU.items.map((i) => i.category))];
+  activeCat = activeCat || cats[0];
+  $("tabs").innerHTML = "";
+  cats.forEach((c) => {
+    const b = document.createElement("button");
+    b.className = "tab" + (c === activeCat ? " on" : ""); b.textContent = c;
+    b.onclick = () => { activeCat = c; renderMenu(); };
+    $("tabs").appendChild(b);
+  });
+  $("menu").innerHTML = "";
+  MENU.items.filter((i) => i.category === activeCat).forEach((i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<div><strong>${esc(i.name)}</strong><small>${esc(i.description)}</small>
+      <div class="tags">${i.tags.map((t) => `<span>${esc(t)}</span>`).join("")}</div></div>
+      <div class="row"><span>${rupee(i.price)}</span><button class="add" aria-label="Add">+</button></div>`;
+    li.querySelector(".add").onclick = () => {
+      const found = cart.find((l) => l.item_id === i.id && !l.notes);
+      if (found) found.qty++; else cart.push({ item_id: i.id, name: i.name, qty: 1, notes: "", price: i.price });
+      renderCart();
+    };
+    $("menu").appendChild(li);
+  });
+}
+
+async function send(text) {
+  text = (text || "").trim();
+  if (!text || busy) return;
+  busy = true; $("sendBtn").disabled = true; setChips([]);
+  history.push({ role: "user", text });
+  addBubble("user", text);
+  const typing = addBubble("model typing", "…");
+  try {
+    const r = await fetch("/api/chat", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: history, cart }),
+    });
+    const data = await r.json();
+    typing.remove();
+    addBubble("model", data.reply || "Hmm, try again?");
+    if (!data.ai_error) history.push({ role: "model", text: data.reply });
+    else history.pop();
+    cart = data.cart || cart;
+    renderCart(data.total);
+    setChips(data.suggested_replies || []);
+  } catch (e) {
+    typing.remove();
+    addBubble("model", "Connection problem — please try again.");
+    history.pop();
+  }
+  busy = false; $("sendBtn").disabled = false; $("msg").focus();
+}
+
+$("chatForm").onsubmit = (e) => { e.preventDefault(); const t = $("msg").value; $("msg").value = ""; send(t); };
+
+$("placeBtn").onclick = async () => {
+  const total = cart.reduce((s, l) => s + l.price * l.qty, 0);
+  const summary = cart.map((l) => `${l.qty}× ${l.name}`).join("\n");
+  if (!confirm(`Place this order?\n\n${summary}\n\nTotal ${rupee(total)} (pay at the counter)`)) return;
+  const r = await fetch("/api/order", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: $("name").value, cart }),
+  });
+  if (!r.ok) { alert("Could not place the order."); return; }
+  const o = await r.json();
+  cart = []; renderCart();
+  addBubble("model", `Order #${o.id} is in! Estimated ready in about ${o.wait_min} min.`);
+  trackOrder(o.id);
+  refreshStatus();
+};
+
+let trackTimer = null;
+async function trackOrder(id) {
+  clearInterval(trackTimer);
+  const box = $("orderBox"); box.classList.remove("hidden");
+  const tick = async () => {
+    const r = await fetch("/api/orders/" + id);
+    if (!r.ok) return;
+    const o = await r.json();
+    const ready = o.status === "ready";
+    box.innerHTML = `<h2>Order #${o.id}</h2>
+      <p class="big ${ready ? "ok" : ""}">${ready ? "Ready for pickup 🎉" : `~${o.remaining_min} min to go`}</p>
+      <p class="fine">For ${esc(o.name)} · ${rupee(o.total)} · pay at the counter</p>`;
+    if (ready) clearInterval(trackTimer);
+  };
+  await tick(); trackTimer = setInterval(tick, 15000);
+}
+
+async function refreshStatus() {
+  try {
+    const s = await (await fetch("/api/status")).json();
+    $("status").textContent = `${s.busyness[0].toUpperCase() + s.busyness.slice(1)} · ~${s.typical_wait_min} min wait`;
+    $("status").dataset.level = s.busyness;
+  } catch (e) {}
+}
+
+(async () => {
+  MENU = await (await fetch("/api/menu")).json();
+  renderMenu(); renderCart(); refreshStatus(); setInterval(refreshStatus, 30000);
+  addBubble("model", `Hi! I'm the ${MENU.cafe_name} companion. Tell me what you're in the mood for — I'll suggest something and build your order.`);
+  setChips(["Something cold & vegan", "I need strong coffee", "Light breakfast under ₹300"]);
+})();
+</script>
+</body>
+</html>

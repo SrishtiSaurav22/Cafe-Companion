@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staff board · Brew & Bloom</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">🧑‍🍳</span><div><h1>Staff board</h1><p class="sub">Live order queue · refreshes every 10s</p></div></div>
+  <div id="status" class="pill">…</div>
+</header>
+<main class="board" id="board"></main>
+<script>
+function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+async function load() {
+  const [orders, s] = await Promise.all([
+    fetch("/api/orders").then((r) => r.json()),
+    fetch("/api/status").then((r) => r.json()),
+  ]);
+  document.getElementById("status").textContent = `${s.orders_in_queue} in queue · ${s.busyness}`;
+  document.getElementById("status").dataset.level = s.busyness;
+  const board = document.getElementById("board");
+  if (!orders.length) { board.innerHTML = '<p class="fine pad">No orders yet. Place one from the customer page.</p>'; return; }
+  board.innerHTML = orders.map((o) => {
+    const mins = Math.max(0, Math.round((o.ready_at * 1000 - Date.now()) / 60000));
+    return `<section class="card ticket ${o.status}">
+      <div class="row"><h2>#${o.id}</h2><span class="tagline">${o.status === "ready" ? "Ready" : `due ~${mins} min`}</span></div>
+      <p><strong>${esc(o.name)}</strong> · ₹${o.total}</p>
+      <ul>${o.items.map((l) => `<li>${l.qty}× ${esc(l.name)}${l.notes ? ` — <em>${esc(l.notes)}</em>` : ""}</li>`).join("")}</ul>
+      ${o.status === "preparing" ? `<button class="primary" onclick="ready('${o.id}')">Mark ready</button>` : ""}
+    </section>`;
+  }).join("");
+}
+async function ready(id) { await fetch(`/api/orders/${id}/ready`, { method: "POST" }); load(); }
+load(); setInterval(load, 10000);
+</script>
+</body>
+</html>

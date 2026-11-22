@@ -1,0 +1,21 @@
+{
+  "cafe_name": "Brew & Bloom",
+  "currency": "INR",
+  "items": [
+    {"id": "filter-coffee", "name": "South Indian Filter Coffee", "category": "Coffee", "price": 120, "prep_min": 4, "caffeine": "high", "tags": ["classic", "hot"], "contains": ["dairy"], "description": "Strong decoction with frothy hot milk, served in a davara."},
+    {"id": "cappuccino", "name": "Cappuccino", "category": "Coffee", "price": 180, "prep_min": 4, "caffeine": "high", "tags": ["hot"], "contains": ["dairy"], "description": "Double espresso, steamed milk, thick foam. Oat milk available."},
+    {"id": "cold-brew", "name": "Cold Brew", "category": "Coffee", "price": 200, "prep_min": 2, "caffeine": "high", "tags": ["cold", "vegan"], "contains": [], "description": "Steeped for 16 hours. Smooth, chocolatey, served over ice."},
+    {"id": "hazelnut-latte", "name": "Iced Hazelnut Latte", "category": "Coffee", "price": 220, "prep_min": 4, "caffeine": "medium", "tags": ["cold", "sweet"], "contains": ["dairy", "nuts"], "description": "Espresso, cold milk, house hazelnut syrup."},
+    {"id": "masala-chai", "name": "Masala Chai", "category": "Tea", "price": 90, "prep_min": 5, "caffeine": "medium", "tags": ["hot", "classic", "spiced"], "contains": ["dairy"], "description": "Assam tea brewed with ginger, cardamom and clove."},
+    {"id": "matcha-latte", "name": "Matcha Latte", "category": "Tea", "price": 230, "prep_min": 4, "caffeine": "medium", "tags": ["hot", "vegan-option"], "contains": ["dairy"], "description": "Ceremonial-grade matcha whisked with milk. Ask for oat milk to make it vegan."},
+    {"id": "chamomile", "name": "Chamomile Honey Tea", "category": "Tea", "price": 140, "prep_min": 3, "caffeine": "none", "tags": ["hot", "calming"], "contains": [], "description": "Caffeine-free chamomile with a drizzle of honey."},
+    {"id": "mango-smoothie", "name": "Alphonso Mango Smoothie", "category": "Cold Drinks", "price": 210, "prep_min": 3, "caffeine": "none", "tags": ["cold", "fruity", "sweet"], "contains": ["dairy"], "description": "Alphonso mango, yoghurt and a pinch of cardamom."},
+    {"id": "lemon-mint", "name": "Lemon Mint Cooler", "category": "Cold Drinks", "price": 130, "prep_min": 2, "caffeine": "none", "tags": ["cold", "refreshing", "vegan"], "contains": [], "description": "Fresh lime, mint and soda. Sweet, salted or mixed."},
+    {"id": "avocado-toast", "name": "Avocado Sourdough Toast", "category": "Food", "price": 290, "prep_min": 8, "caffeine": "none", "tags": ["vegan", "savoury", "brunch"], "contains": ["gluten"], "description": "Smashed avocado, chilli flakes and microgreens on sourdough."},
+    {"id": "paneer-sandwich", "name": "Paneer Tikka Sandwich", "category": "Food", "price": 260, "prep_min": 9, "caffeine": "none", "tags": ["savoury", "spicy", "filling"], "contains": ["dairy", "gluten"], "description": "Grilled paneer tikka, mint chutney and onions on toasted bread."},
+    {"id": "poha", "name": "Kanda Poha", "category": "Food", "price": 150, "prep_min": 6, "caffeine": "none", "tags": ["vegan", "light", "breakfast", "gluten-free"], "contains": ["peanuts"], "description": "Flattened rice with onion, peanuts, curry leaves and lime."},
+    {"id": "banana-bread", "name": "Walnut Banana Bread", "category": "Bakes", "price": 160, "prep_min": 1, "caffeine": "none", "tags": ["sweet", "snack"], "contains": ["gluten", "nuts", "eggs"], "description": "Moist slice, warmed on request."},
+    {"id": "almond-croissant", "name": "Almond Croissant", "category": "Bakes", "price": 190, "prep_min": 2, "caffeine": "none", "tags": ["sweet", "flaky"], "contains": ["gluten", "nuts", "dairy", "eggs"], "description": "Twice-baked butter croissant with almond frangipane."},
+    {"id": "brownie", "name": "Vegan Dark Chocolate Brownie", "category": "Bakes", "price": 170, "prep_min": 1, "caffeine": "low", "tags": ["sweet", "vegan", "chocolate"], "contains": ["gluten"], "description": "Fudgy, dairy-free and egg-free."}
+  ]
+}
